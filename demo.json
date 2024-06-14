@@ -1,0 +1,56 @@
+{
+  "first_question" : 0,
+  "timed" : false,
+  "scored" : false,
+  "printer" : "screen",
+  "0" : {
+    "question" : {
+      "viewable_text" : "Would you like to perform any optional actions?",
+      "next_question" : null,
+      "previous_question" : null,
+      "type" : "multiple_choice"
+    },
+    "answers" : [
+      {
+        "viewable_text" : "Trade with another player.",
+        "value" : 1
+      },
+      {
+        "viewable_text" : "Build a pipeline.",
+        "value" : 2
+      }
+    ]
+  },
+  "1" : {
+    "question" : {
+      "viewable_text" : "Which Player would you like to trade with?",
+      "next_question" : null,
+      "previous_question" : 0  ,
+      "type" : "multiple_choice"
+    },
+    "answers" : [
+      {
+        "viewable_text" : "A"
+      },
+      {
+        "viewable_text" : "B"
+      },
+      {
+        "viewable_text" : "C"
+      }
+    ]
+  },
+  "2" : {
+    "question" : {
+      "viewable_text" : "Which property would you like to build a pipeline on?",
+      "next_question" : null,
+      "previous_question" : 0  ,
+      "type" : "multiple_choice"
+    },
+    "answers" : [
+      {
+        "viewable_text" : "C"
+      }
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "first_question" : "1",
+  "timed" : false,
+  "scored" : false,
+  "<ID>" : {
+    "question" : {
+      "viewable_text" : "What is your name?",
+      "next_question" : "<NEXT_QUESTION_ID>", # Null is disabled and -1 lets you end the quest without submitting
+      "previous_question" : "<PREV_QUESTION_ID>", # Null is disabled
+      "validator" : {
+        "type" : "REGEX/DIGIT/MATH",
+        "regex" : "/d"
+      }
+    },
+    "answers" : [
+      {
+        "viewable_text" : "John"
+      },
+      {
+        "viewable_text" : "Bob",
+        "value" : 2
+      },
+      {
+        "viewable_text" : "Fred",
+        "value" : 2,
+        "validator" : {
+
+        }
+      }
+    ]
+  },
+  "<ID2>" : {}
+}

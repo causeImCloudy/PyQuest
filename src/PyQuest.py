@@ -1,180 +1,179 @@
+import curses
 import os
-import json
-import re
+import logging
 
-import rich
-from rich.console import Console
+import DataReader
+import DataPrinter
+import Question
+
+
+PRINTER_TYPE = None
+
+
+def cursesWrapped(func):
+    def wrapper(*args, **kwargs):
+        if PRINTER_TYPE != "screen":
+            return func(*args, **kwargs)
+
+        try:
+            # Try Function
+            func(*args, **kwargs)
+        except Exception as e:
+            curses.nocbreak()
+            curses.nocbreak()
+            curses.echo()
+            curses.endwin()
+            raise
+
+    return wrapper
 
 
 class PyQuest:
-    def __init__(self, config, parent=False):
-        """
-            Create a loop that reads in JSON or a file
-        """
+    def __init__(self, config, first_question=None, auto_start=False):
 
-        # Differentiate between passed JSON and a file containing JSON
+        self.questions = None
+        self.timed = None
+        self.scored = None
+        self.current_question = 0 if first_question is None else first_question
+
+        # Differentiate between passed config and a file containing the config. Then handle errors
         if isinstance(config, str) and os.path.exists(config):
-            with open(config, "r") as f:
-                try:
-                    self.config = json.load(f)
-                except json.JSONDecodeError as exc:
-                    print(exc)
+            data = DataReader.data_from_file(config)
+        elif isinstance(config, dict):
+            data = DataReader.data_from_dict(config)
+        elif not os.path.exists(config):
+            raise FileNotFoundError
         else:
-            self.config = config
+            raise ValueError("Invalid config variable")
 
-        self.__validate_config()
+        # Take in initial config variable and assign them to the instance
+        # Set variables
+        self.set_current_question(data["first_question"])
+        self.set_scored(data["scored"])
+        self.set_timed(data["timed"])
+        # TODO Add support for custom colors
+        self.printer = DataPrinter.ScreenPrinter() if data["printer"] == "screen" else DataPrinter.Terminal()
+        global PRINTER_TYPE
+        PRINTER_TYPE = data["printer"]
 
-        self.parent = parent
-        self.console = Console()
+        # Delete these in order to loop through the questions
+        del data["first_question"]
+        del data["scored"]
+        del data["timed"]
+        del data["printer"]
 
-    def __validate_config(self):
-        if str(self.config).find('-1') != -1:
-            self.__print_warning__('-1 is a reserved parameter please validate your config.')
-            exit()
+        self.set_questions(DataReader.data_from_dict(data))  # Create the questions then assign back to
 
-    def start(self, position=0):
+        if auto_start:
+            self.start_quest()
+
+    def set_questions(self, questions) -> None:
+        if not isinstance(questions, dict):
+            raise ValueError("Invalid config variable")
+
+        self.questions = questions
+
+    def set_timed(self, timed) -> None:
+        if not isinstance(timed, bool):
+            raise ValueError("Timed variable must be bool.")
+
+        self.timed = timed
+
+    def set_scored(self, scored) -> None:
+        if not isinstance(scored, bool):
+            raise ValueError("Scored variable must be bool.")
+
+        self.scored = scored
+
+    def set_current_question(self, current_question) -> None:
+        if not isinstance(current_question, int):
+            raise ValueError("Current Question must be int.")
+
+        self.current_question = current_question
+
+    def questing(self, questionID):
         """
-            Start the loop at the position of which correlates to the order at which the questions appear in the
-            configuration file/data.
-        """
+        Go out battle the demons and loot the winches.
+        Handles the quest flow.
+        For the next question -1 is a reserved value which ends the quest.
 
-        for question in self.config[position:]:
-            answer = self.__ask__(question)
-            question["answer"] = answer  # Only stored in question where ask is recursive
-
-        # returnable = {'answer': self.config[0]['answer']}
-
-        return self.config
-
-    def __ask__(self, question):
-
-        self.__print_question__(question['question'])
-        answer = -1
-        while answer == -1:
-            if question.get("sub-questions"):
-                answer = self.__ordered_answer__(question['answers'])
-                question["answer"] = answer
-
-                if answer > -1:
-
-                    answer = (PyQuest(
-                        question['sub-questions'],
-                        parent=True)
-                              .__ask__(question['sub-questions'][answer]))
-
-            elif isinstance(question['answers'], list):
-                return self.__unordered_answer__(question['answers'])
-            elif isinstance(question['answers'], dict):
-                if question['answers'].get("regex_validation"):
-                    return self.__regex_answer__(question['answers'])
-                elif question['answers'].get("math_validation"):
-                    return self.__mathematics_answer__(question['answers'])
-
-        return answer
-
-    def __mathematics_answer__(self, answers):
-        """
-            Utilizes the Eval function to calculate whether an answer fits. Math answers can only be digits no eqastions
-            :param answers:
-            :return:
-        """
-        answer = 1
-        digitString = "\\d+"
-        answer = self.__answer__(digitString)
-
-        while not eval(answers['math_validation'].replace('<answer>', answer)):
-            self.__print_warning__(
-                answers['error'] if answers.get("error") else "Answer does not match mathematical validation."
-            )
-            answer = self.__answer__(digitString)
-        return answer
-
-    def __regex_answer__(self, answers):
-
-        return self.__answer__(
-            regex=answers["regex_validation"],
-            error=answers['error'] if answers.get("error") else "Answer does not match regex validation."
-        )
-
-    def __unordered_answer__(self, answers):
-
-        for index, answer in enumerate(answers):
-            self.__print_answer__(answer, index)
-
-        if self.parent:
-            self.__print_answer__("<-- Back", len(answers))
-            answer = int(self.__answer__(len(answers) + 1))
-        else:
-            answer = int(self.__answer__(len(answers)))
-
-        if answer == len(answers):
-            return -1
-        else:
-            return answer
-
-    def __ordered_answer__(self, answers):
-        """
-            Ordered answers are stored within the answers list of tuples
-            Returns the value of the answered number
+        :param questionID:
+        :return:
         """
 
-        for index, answer in enumerate(answers):
-            self.__print_answer__(answer['answer'], index)
+        logging.info(f"Questing {type(questionID)}{questionID}")
 
-        if self.parent:
-            self.__print_answer__("<-- Back", len(answers))
-            answer = int(self.__answer__(len(answers) + 1))
-        else:
-            answer = int(self.__answer__(len(answers)))
+        current_question = self.get_question_by_id(questionID)
 
-        # Handles going back
-        if answer == len(answers):
-            return -1
-        else:
-            return answers[answer]['value']
+        #  Return from the selected path and mark that answer as selected.
+        next_question, answer = self.printer.ask_question(current_question)
 
-    def __answer__(self, regex, error="Answer does not match expected answer."):
+        if answer is None:
+            return next_question
+
+        answer.set_selected_status(True)
+        logging.debug(f"Answer {answer.get_viewable_text()} has been selected")
+
+        # Set default path.
+        path = current_question.get_next_question()
+        if answer.get_value():
+            path = answer.get_value()  # Update path if answer obj has a custom path
+
+        logging.debug(f"Questing has pathed to {path}")
+
+        if path == -1:
+            return None
+
+        # Return next question by ID of Path
+        return path
+
+    @cursesWrapped
+    def start_quest(self, questionId=None) -> None:
         """
-            Handles receiving the answer, validating it, and returning it back.
-            Validation is split between general regex, and standard 0-x answers
+        Start the quest from the default first_question parameter
         """
-        answer = None
-        if isinstance(regex, str):
-            pattern = re.compile(regex)
-            answered = False
-            while not answered:
-                answer = self.__print_answer_prompt__()
-                if pattern.match(answer) and len(answer) > 0:
-                    answered = True
-                else:
-                    self.__print_warning__(error)
-        else:
-            answer = int(self.__answer__("\\d+"))
-            while not (0 <= answer < regex):
-                self.__print_warning__(error)
-                answer = int(self.__answer__("\\d+"))
+        questionId = questionId if questionId is not None else self.current_question
+        while True:
+            questionId = self.questing(questionId)
 
-        return answer
+            if questionId is None:
+                break
 
-    def __print_answer_prompt__(self):
-
-        return self.console.input("[bold green]Answer > ")
-
-    @staticmethod
-    def __print_question__(question):
-        rich.print(f"[bold red][Q][/bold red] {question}")
-
-    @staticmethod
-    def __print_warning__(warning):
-        rich.print(f"[bold yellow][!][/bold yellow] {warning}")
-
-    @staticmethod
-    def __print_answer__(answer, order):
-        rich.print(f"[bold green][A].[{order}][/bold green]\t {answer}")
+    def get_question_by_id(self, questionID) -> Question:
+        try:
+            question = self.questions[str(questionID)]
+            return question
+        except KeyError:
+            raise KeyError(f"Invalid question ID: {questionID}")
 
 
 if __name__ == "__main__":
-    quest = PyQuest("/Users/carterloyd/PycharmProjects/PyQuest/tester.json")
-    answers = quest.start()
+    import argparse
 
-    print(answers)
+    # Set commandline options
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-q", "--questions", type=str,
+                        help="Question to ask first")
+    parser.add_argument("-D", "--debug", action="store_true",
+                        help="Enable debug logging of the command line")
+    parser.add_argument("-i", "--config", type=str, required=True,
+                        help="Path to the configuration file.")
+    parser.add_argument("-t", "--timed", action="store_true",  # TODO
+                        help="WIP!!! Force timed completion of the quest.")
+    parser.add_argument("-p", "--scored", action="store_true",  # TODO
+                        help="WIP!!! Scored completion of the quest.")
+    parser.add_argument("-s", "--start", action="store_true",
+                        help="Auto start quest.")
+    args = parser.parse_args()
+
+    logging.basicConfig(
+        filename="log.txt",
+        filemode='a',
+        format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+        datefmt='%H:%M:%S',
+        level=logging.DEBUG if args.debug else logging.INFO, )
+
+    logging.log(level=logging.DEBUG, msg="Starting PyQuest with Debug Logging")
+
+    quest = PyQuest(config=args.config, first_question=args.questions, auto_start=args.start)

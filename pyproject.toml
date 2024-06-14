@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyQuest"
+version = "0.1.0"
+description = "A question and answer plaform that supports multiple(WIP!) terminal Q&A interactions and navigation. "
+readme = "README.md"
+authors = [{ name = "CauseImCloudy", email = "carter.loyd@causeimcloudy.dev" }]
+license = { file = "LICENSE" }
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]

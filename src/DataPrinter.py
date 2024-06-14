@@ -1,0 +1,296 @@
+import os
+import curses
+import logging
+import time
+
+import Answer
+
+
+class Printer:
+    def __init__(self,
+                 question_color='\033[31m',
+                 answer_color='\033[32m',
+                 primary_color='\033[37m',
+                 secondary_color='\033[34m',
+                 font_size=12,
+                 color=True
+                 ):
+        """
+        Assign the passed values to the instance
+        Defaults:
+            question_color      red
+            answer_color        green
+            primary_color       white
+            secondary_color     blue
+        """
+        if color:
+            self.question_color = question_color
+            self.answer_color = answer_color
+            self.primary_color = primary_color
+            self.secondary_color = secondary_color
+            self.font_size = font_size
+
+            self.question_prefix = f"{self.primary_color}[{self.secondary_color}Q{self.primary_color}]"
+            self.answer_prefix = f"{self.primary_color}[{self.secondary_color}A{self.primary_color}]"
+            self.info_prefix = f"{self.primary_color}[{self.secondary_color}Info{self.primary_color}]"
+            self.warning_prefix = f"{self.primary_color}[33m!{self.primary_color}]"
+        else:
+            self.question_prefix = "[Q]"
+            self.answer_prefix = "-\t"
+            self.info_prefix = "[Info]"
+            self.warning_prefix = "[!]"
+
+
+class Terminal(Printer):
+
+    def print_question(self, question):
+        """Prints the question to the standard out utilizing the color structure"""
+        print(f"{self.primary_color}[{self.secondary_color}Q{self.primary_color}]{self.question_color}{question}")
+
+    def print_answers(self, answers):
+        """Prints the answers to the standard out utilizing the color structure"""
+        for i, answer in enumerate(answers):
+            print(f"{self.primary_color}[{self.secondary_color}{i}{self.primary_color}]{self.answer_color}{answer}")
+
+    def print_information(self, message):
+        """Prints informational message to the standard out utilizing the color structure"""
+        print(f"{self.primary_color}[{self.secondary_color}Info{self.primary_color}]{self.primary_color}{message}")
+
+    def print_warning(self, message):
+        """Prints a warning message to the standard out utilizing the color structure"""
+        print(f"{self.primary_color}[\033[33m!{self.primary_color}]{self.primary_color}{message}")
+
+    @staticmethod
+    def clear_screen():
+        """Clears the screen"""
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+
+class ScreenPrinter(Printer):
+    # TODO Add a duplicate screen on top that can print static and information
+    def __init__(self):
+        super().__init__(color=False)
+
+        self.max_ans = 0
+        self.min_ans = 0
+
+        self.posx = 5
+        self.posy = 1
+
+        self.navigation_offset = 8
+        self.highlight_format = curses.A_BOLD | curses.A_UNDERLINE
+        self.navigation_array = ["< Prev", "Done", "Next >"]
+
+        self.stdscr = curses.initscr()
+        curses.curs_set(0)
+
+    def __set_stdscr(self, stdscr):
+        self.stdscr = stdscr
+
+    def __del__(self):
+        try:
+            curses.nocbreak()
+            curses.echo()
+            curses.endwin()
+            logging.debug("Curses cleanup completed in __del__.")
+        except Exception as e:
+            logging.critical("Failed to clean up curses:", e)
+
+    def ask_question(self, question, questionType="multiple_choice") -> int:
+        """
+        Asks a question to terminal utilizing python curses. This handles different question types and returns the int
+        to the answer list.
+
+        :param question:
+        :param questionType:
+        :return: int
+        """
+
+        # TODO Add prefix option
+
+        logging.debug(f"Asking question {question} with question type {questionType}")
+        if questionType == "multiple_choice":
+            return self.__multiple_choice__(question)
+        else:
+            # TODO Selected ALL, Free Text, Math
+            raise NotImplementedError(f"Question type {questionType} not implemented")
+
+    def __multiple_choice__(self, question) -> (int, Answer):
+        # TODO Handle screen size and long text questions
+
+        # Reset x and y
+        self.posx, self.posy = 0, 1
+
+        # Set Min,Max Answers
+        self.min_ans, self.max_ans = 1, len(question.get_answers())
+
+        navigation = question.get_navigation()
+        previous_question = question.get_previous_question()
+        next_question = question.get_next_question()
+
+        max_posx = max(0, (len(navigation) - 1) * self.navigation_offset)
+
+        # Add 1 max row if navigation is available
+        if previous_question is not None:
+            self.max_ans += 1
+
+        # Set first screen
+        self.stdscr.clear()
+
+        self.__print_question__(question)
+        self.__print_answers__(question.get_answers())
+
+        if len(navigation) > 0:
+            self.__navigation__(navigation)
+
+        self.stdscr.refresh()
+
+        while True:
+
+            key = self.stdscr.getch()
+
+            if os.name == "posix":  # If this is OSX
+
+                if key == 65:  # Down
+                    self.posy -= 1
+                elif key == 66:  # Up
+                    self.posy += 1
+                elif key == 68:  # Left
+                    if self.posy == self.max_ans:  # Only Update L/R on navigation row
+                        self.posx -= self.navigation_offset
+                elif key == 67:  # Right
+                    if self.posy == self.max_ans:
+                        self.posx += self.navigation_offset
+                elif key == 10:  # Enter
+                    if self.posy == self.max_ans and (len(navigation) > 0):  # Return prev for navigation
+                        index = int(self.posx / self.navigation_offset)
+                        return navigation[index], None
+                    else:  # Return Answered ID
+                        answer = question.get_answer_by_id(self.posy - 1)
+                        return answer.get_value(), answer
+            else:
+                raise NotImplementedError
+
+            # Limit Y
+            if self.posy < self.min_ans:
+                self.posy = self.min_ans
+            elif self.posy > self.max_ans:
+                self.posy = self.max_ans
+
+            # Limit X
+            if self.posx < 0:
+                self.posx = 0
+            elif self.posx > max_posx:
+                self.posx = max_posx
+
+            # Clear screen at paste question with its answers
+            self.stdscr.clear()
+            self.__print_question__(question)
+            self.__print_answers__(question.get_answers())
+
+            # Determine if the na
+            if len(navigation) > 0:
+                self.__navigation__(navigation)
+
+            # self.stdscr.addstr(15, 15, str(self.posx))
+            # self.stdscr.addstr(20, 15, str(key))
+
+            self.stdscr.move(self.posy, self.posx, )
+            self.stdscr.refresh()
+
+    def __print_question__(self, question):
+        fmt_str = self.question_prefix + question.get_viewable_text()
+        self.stdscr.addstr(0, 0, fmt_str)
+
+    def __print_answers__(self, answers):
+        for i, answer in enumerate(answers):
+            index = i + 1
+            if index == self.posy:
+                self.__print_highlighted_answer__(i + 1, answer)
+            else:
+                self.__print_answer__(i + 1, answer)
+
+    def __print_highlighted_answer__(self, row, answer) -> None:
+        fmt_str = self.answer_prefix + answer.get_viewable_text()
+        self.stdscr.addstr(row, 5, fmt_str, curses.A_BOLD | curses.A_UNDERLINE)
+
+    def __print_answer__(self, row, answer) -> None:
+        fmt_str = self.answer_prefix + answer.get_viewable_text()
+        self.stdscr.addstr(row, 5, fmt_str)
+
+    def __navigation__(self, navigation):
+        highlighted = self.posx / self.navigation_offset
+        # Prints elements left to right with an offset inbetween, then handles highlighting based on x position
+        for i, element in enumerate(navigation):
+            self.stdscr.addstr(self.max_ans,
+                               i * self.navigation_offset,
+                               str(self.navigation_array[i]),
+                               self.highlight_format
+                               if (i == highlighted and self.posy == self.max_ans)
+                               else curses.A_NORMAL
+                               )
+
+
+if __name__ == '__main__':
+    import Question
+
+    logging.basicConfig(level=logging.INFO)
+
+    printer = ScreenPrinter()
+
+    dat = {
+        "question": {
+            "viewable_text": "What is your name?",
+            "next_question": "1",
+            "previous_question": "-1",
+            "type": "multiple_choice"
+        },
+        "answers": [
+            {
+                "viewable_text": "John"
+            },
+            {
+                "viewable_text": "Bob",
+                "value": 2
+            },
+            {
+                "viewable_text": "Fred",
+                "value": 2,
+                "validator": {
+
+                }
+            }
+        ]
+    }
+    dat2 = {
+        "question": {
+            "viewable_text": "Where do you live?",
+            "next_question": "2",
+            "previous_question": "1",
+            "type": "multiple_choice"
+        },
+        "answers": [
+            {
+                "viewable_text": "China"
+            },
+            {
+                "viewable_text": "USA",
+                "value": 2
+            },
+            {
+                "viewable_text": "FreeLo",
+                "value": 2,
+                "validator": {
+
+                }
+            }
+        ]
+    }
+    q = Question.Question(1, dat)
+    q2 = Question.Question(2, dat2)
+
+    answer = printer.ask_question(q)
+    print(answer)
+    time.sleep(1)
+    answer = printer.ask_question(q2)
+    print(answer)
