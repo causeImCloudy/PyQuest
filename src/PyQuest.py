@@ -7,27 +7,6 @@ import DataPrinter
 import Question
 
 
-PRINTER_TYPE = None
-
-
-def cursesWrapped(func):
-    def wrapper(*args, **kwargs):
-        if PRINTER_TYPE != "screen":
-            return func(*args, **kwargs)
-
-        try:
-            # Try Function
-            func(*args, **kwargs)
-        except Exception as e:
-            curses.nocbreak()
-            curses.nocbreak()
-            curses.echo()
-            curses.endwin()
-            raise
-
-    return wrapper
-
-
 class PyQuest:
     def __init__(self, config, first_question=None, auto_start=False):
 
@@ -127,7 +106,6 @@ class PyQuest:
         # Return next question by ID of Path
         return path
 
-    @cursesWrapped
     def start_quest(self, questionId=None) -> None:
         """
         Start the quest from the default first_question parameter

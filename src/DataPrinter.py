@@ -1,10 +1,44 @@
 import os
 import curses
 import logging
+import pdb
 import time
 
 import Answer
 
+from icecream import ic
+
+
+def cursesWrapped(func):
+
+    def wrapper(*args, **kwargs):
+        self = args[0]
+
+        try:
+            stdscr = curses.initscr()
+
+            # Turn off echoing of keys, and enter cbreak mode,
+            # where no buffering is performed on keyboard input
+            curses.noecho()
+            curses.cbreak()
+
+            # In keypad mode, escape sequences for special keys
+            # (like the cursor keys) will be interpreted and
+            # a special value like curses.KEY_LEFT will be returned
+            stdscr.keypad(1)
+            curses.curs_set(0)
+
+            self.stdscr = stdscr
+
+            result = func(*args, **kwargs)
+        finally:
+            curses.nocbreak()
+            curses.echo()
+            curses.endwin()
+            self.stdscr = None
+
+        return result
+    return wrapper
 
 class Printer:
     def __init__(self,
@@ -81,22 +115,20 @@ class ScreenPrinter(Printer):
         self.highlight_format = curses.A_BOLD | curses.A_UNDERLINE
         self.navigation_array = ["< Prev", "Done", "Next >"]
 
-        self.stdscr = curses.initscr()
-        curses.curs_set(0)
+        self.stdscr = None
 
-    def __set_stdscr(self, stdscr):
-        self.stdscr = stdscr
 
-    def __del__(self):
-        try:
-            curses.nocbreak()
-            curses.echo()
-            curses.endwin()
-            logging.debug("Curses cleanup completed in __del__.")
-        except Exception as e:
-            logging.critical("Failed to clean up curses:", e)
+    # def __del__(self):
+    #     try:
+    #         curses.nocbreak()
+    #         curses.echo()
+    #         curses.endwin()
+    #         logging.debug("Curses cleanup completed in __del__.")
+    #     except Exception as e:
+    #         logging.critical("Failed to clean up curses:", e)
 
-    def ask_question(self, question, questionType="multiple_choice") -> int:
+    @cursesWrapped
+    def ask_question(self, question, questionType="multiple_choice") -> (int, Answer):
         """
         Asks a question to terminal utilizing python curses. This handles different question types and returns the int
         to the answer list.
@@ -116,7 +148,6 @@ class ScreenPrinter(Printer):
             raise NotImplementedError(f"Question type {questionType} not implemented")
 
     def __multiple_choice__(self, question) -> (int, Answer):
-        # TODO Handle screen size and long text questions
 
         # Reset x and y
         self.posx, self.posy = 0, 1
@@ -134,7 +165,7 @@ class ScreenPrinter(Printer):
         if previous_question is not None:
             self.max_ans += 1
 
-        # Set first screen
+        # Set first frame to screen
         self.stdscr.clear()
 
         self.__print_question__(question)
@@ -151,22 +182,30 @@ class ScreenPrinter(Printer):
 
             if os.name == "posix":  # If this is OSX
 
-                if key == 65:  # Down
+                if key == 259:  # Down
                     self.posy -= 1
-                elif key == 66:  # Up
+
+                elif key == 258:  # Up
                     self.posy += 1
-                elif key == 68:  # Left
+
+                elif key == 260:  # Left
                     if self.posy == self.max_ans:  # Only Update L/R on navigation row
                         self.posx -= self.navigation_offset
-                elif key == 67:  # Right
+
+                elif key == 261:  # Right
                     if self.posy == self.max_ans:
                         self.posx += self.navigation_offset
+
                 elif key == 10:  # Enter
-                    if self.posy == self.max_ans and (len(navigation) > 0):  # Return prev for navigation
+
+                    if self.posy == self.max_ans and (len(navigation) > 0):
+                        logging.debug("Prev nav")    # Return prev for navigation
                         index = int(self.posx / self.navigation_offset)
                         return navigation[index], None
+
                     else:  # Return Answered ID
                         answer = question.get_answer_by_id(self.posy - 1)
+                        logging.debug(f"Answered {answer.get_value()}")
                         return answer.get_value(), answer
             else:
                 raise NotImplementedError
@@ -192,8 +231,8 @@ class ScreenPrinter(Printer):
             if len(navigation) > 0:
                 self.__navigation__(navigation)
 
-            # self.stdscr.addstr(15, 15, str(self.posx))
-            # self.stdscr.addstr(20, 15, str(key))
+            self.stdscr.addstr(15, 15, str(self.posy))
+            self.stdscr.addstr(20, 15, str(key))
 
             self.stdscr.move(self.posy, self.posx, )
             self.stdscr.refresh()
