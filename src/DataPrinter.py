@@ -1,12 +1,8 @@
-import os
 import curses
 import logging
-import pdb
-import time
+import os
 
 import Answer
-
-from icecream import ic
 
 
 def cursesWrapped(func):
@@ -28,17 +24,27 @@ def cursesWrapped(func):
             stdscr.keypad(1)
             curses.curs_set(0)
 
+            # This wrapper should only be used within the printer class.
+            # Self will pick up when places over a method of the class.
             self.stdscr = stdscr
 
+            # Assign to result in order to return outside the try finally block
             result = func(*args, **kwargs)
         finally:
+            """
+            This content is copied from curses.wrapper function. 
+            """
             curses.nocbreak()
             curses.echo()
             curses.endwin()
+
+            # Clear after use in order to not use after free
             self.stdscr = None
 
         return result
+
     return wrapper
+
 
 class Printer:
     def __init__(self,
@@ -108,6 +114,9 @@ class ScreenPrinter(Printer):
         self.max_ans = 0
         self.min_ans = 0
 
+        # Hold the current x and y position of the cursor on the terminal.
+        # PosY starts at 1 to be passed the question line and properly show the first answer as highlighted
+        # PosX starts at 5 to be a middle ground
         self.posx = 5
         self.posy = 1
 
@@ -116,16 +125,6 @@ class ScreenPrinter(Printer):
         self.navigation_array = ["< Prev", "Done", "Next >"]
 
         self.stdscr = None
-
-
-    # def __del__(self):
-    #     try:
-    #         curses.nocbreak()
-    #         curses.echo()
-    #         curses.endwin()
-    #         logging.debug("Curses cleanup completed in __del__.")
-    #     except Exception as e:
-    #         logging.critical("Failed to clean up curses:", e)
 
     @cursesWrapped
     def ask_question(self, question, questionType="multiple_choice") -> (int, Answer):
@@ -231,9 +230,6 @@ class ScreenPrinter(Printer):
             if len(navigation) > 0:
                 self.__navigation__(navigation)
 
-            self.stdscr.addstr(15, 15, str(self.posy))
-            self.stdscr.addstr(20, 15, str(key))
-
             self.stdscr.move(self.posy, self.posx, )
             self.stdscr.refresh()
 
@@ -268,68 +264,3 @@ class ScreenPrinter(Printer):
                                if (i == highlighted and self.posy == self.max_ans)
                                else curses.A_NORMAL
                                )
-
-
-if __name__ == '__main__':
-    import Question
-
-    logging.basicConfig(level=logging.INFO)
-
-    printer = ScreenPrinter()
-
-    dat = {
-        "question": {
-            "viewable_text": "What is your name?",
-            "next_question": "1",
-            "previous_question": "-1",
-            "type": "multiple_choice"
-        },
-        "answers": [
-            {
-                "viewable_text": "John"
-            },
-            {
-                "viewable_text": "Bob",
-                "value": 2
-            },
-            {
-                "viewable_text": "Fred",
-                "value": 2,
-                "validator": {
-
-                }
-            }
-        ]
-    }
-    dat2 = {
-        "question": {
-            "viewable_text": "Where do you live?",
-            "next_question": "2",
-            "previous_question": "1",
-            "type": "multiple_choice"
-        },
-        "answers": [
-            {
-                "viewable_text": "China"
-            },
-            {
-                "viewable_text": "USA",
-                "value": 2
-            },
-            {
-                "viewable_text": "FreeLo",
-                "value": 2,
-                "validator": {
-
-                }
-            }
-        ]
-    }
-    q = Question.Question(1, dat)
-    q2 = Question.Question(2, dat2)
-
-    answer = printer.ask_question(q)
-    print(answer)
-    time.sleep(1)
-    answer = printer.ask_question(q2)
-    print(answer)

@@ -5,51 +5,160 @@
   "printer" : "screen",
   "0" : {
     "question" : {
-      "viewable_text" : "Would you like to perform any optional actions?",
+      "viewable_text": "What event do you want to go to?",
       "next_question" : null,
       "previous_question" : null,
       "type" : "multiple_choice"
     },
     "answers" : [
       {
-        "viewable_text" : "Trade with another player.",
+        "viewable_text": "Zoo",
         "value" : 1
       },
       {
-        "viewable_text" : "Build a pipeline.",
+        "viewable_text": "Park",
         "value" : 2
+      },
+      {
+        "viewable_text": "Aquarium",
+        "value": 3
+      },
+      {
+        "viewable_text": "Super Market",
+        "value": 4
       }
     ]
   },
   "1" : {
     "question" : {
-      "viewable_text" : "Which Player would you like to trade with?",
+      "viewable_text": "Which Zoo do you want to do to?",
       "next_question" : null,
       "previous_question" : 0  ,
       "type" : "multiple_choice"
     },
     "answers" : [
       {
-        "viewable_text" : "A"
+        "viewable_text": "Kansas City Zoo"
       },
       {
-        "viewable_text" : "B"
+        "viewable_text": "Omaha Zoo"
       },
       {
-        "viewable_text" : "C"
+        "viewable_text": "Animal Kingdom Disney World"
       }
     ]
   },
   "2" : {
     "question" : {
-      "viewable_text" : "Which property would you like to build a pipeline on?",
+      "viewable_text": "What size park do you want to go to?",
       "next_question" : null,
       "previous_question" : 0  ,
       "type" : "multiple_choice"
     },
     "answers" : [
       {
-        "viewable_text" : "C"
+        "viewable_text": "Neighborhood"
+      },
+      {
+        "viewable_text": "Large"
+      },
+      {
+        "viewable_text": "Animal Kingdom Disney World"
+      }
+    ]
+  },
+  "3": {
+    "question": {
+      "viewable_text": "Which Aquarium do you want to do to?",
+      "next_question": null,
+      "previous_question": 0,
+      "type": "multiple_choice"
+    },
+    "answers": [
+      {
+        "viewable_text": "Kansas City Zoo"
+      },
+      {
+        "viewable_text": "Omaha Zoo"
+      },
+      {
+        "viewable_text": "Sea World"
+      }
+    ]
+  },
+  "4": {
+    "question": {
+      "viewable_text": "What type of super market do you shop at?",
+      "next_question": null,
+      "previous_question": 0,
+      "type": "multiple_choice"
+    },
+    "answers": [
+      {
+        "viewable_text": "Local",
+        "value": 5
+      },
+      {
+        "viewable_text": "Big Chain",
+        "value": 6
+      },
+      {
+        "viewable_text": "Healthy",
+        "value": 7
+      }
+    ]
+  },
+  "5": {
+    "question": {
+      "viewable_text": "What super market do you shop at?",
+      "next_question": null,
+      "previous_question": 0,
+      "type": "multiple_choice"
+    },
+    "answers": [
+      {
+        "viewable_text": "Farmers market"
+      },
+      {
+        "viewable_text": "Zoe's Fruit Stand"
+      }
+    ]
+  },
+  "6": {
+    "question": {
+      "viewable_text": "What super market do you shop at?",
+      "next_question": null,
+      "previous_question": 0,
+      "type": "multiple_choice"
+    },
+    "answers": [
+      {
+        "viewable_text": "Walmart"
+      },
+      {
+        "viewable_text": "Target"
+      },
+      {
+        "viewable_text": "Price Chopper"
+      }
+    ]
+  },
+  "7": {
+    "question": {
+      "viewable_text": "What super market do you shop at?",
+      "next_question": null,
+      "previous_question": 0,
+      "type": "multiple_choice"
+    },
+    "answers": [
+      {
+        "viewable_text": "Whole Foods"
+      },
+      {
+        "viewable_text": "Trader Joes"
+      },
+      {
+        "viewable_text": "McKeavers"
       }
     ]
   }

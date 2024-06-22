@@ -15,8 +15,11 @@ class Answer:
         return self.validator.validate(self.value)
 
     def set_value(self, value) -> None:
+
         if sys.getsizeof(value) > 1024 * 1024:
             raise ValueError("Answer value must be less than 1024 bytes")
+        elif value is None:
+            pass
         self.value = value
 
     def set_viewable_text(self, viewable_text) -> None:

@@ -1,19 +1,20 @@
-import curses
-import os
 import logging
+import os
 
-import DataReader
+import Answer
 import DataPrinter
+import DataReader
 import Question
 
 
 class PyQuest:
-    def __init__(self, config, first_question=None, auto_start=False):
+    def __init__(self, config, first_question=None, auto_start=False) -> None:
 
         self.questions = None
         self.timed = None
         self.scored = None
         self.current_question = 0 if first_question is None else first_question
+        self.first_question = self.current_question  # Assigns the first value of current_question to record and track
 
         # Differentiate between passed config and a file containing the config. Then handle errors
         if isinstance(config, str) and os.path.exists(config):
@@ -123,6 +124,34 @@ class PyQuest:
             return question
         except KeyError:
             raise KeyError(f"Invalid question ID: {questionID}")
+
+    def get_furthest_answer(self, question=None) -> Answer:
+        """
+        returns the final answer by following the answer tree till there is no further answer to search.
+        :return Answer
+        :return None
+        """
+        cur_id = self.first_question if question is None else question
+
+        # Get the answer of current question
+        cur_ans = self.get_question_by_id(cur_id).get_selected_answer()
+
+        # Check if there is a selected answer
+        if cur_ans is None:
+            return None
+
+        cur_id = cur_ans.get_value()
+
+        # Ensure the current answer has a value
+        if cur_id is None:
+            return cur_ans
+
+        rtrnable = self.get_furthest_answer(cur_id)
+
+        if rtrnable is None:
+            return cur_ans
+
+        return rtrnable
 
 
 if __name__ == "__main__":

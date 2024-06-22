@@ -2,6 +2,7 @@ import logging
 
 import Answer
 
+
 class Question:
     def __init__(self, ID, question):
         logging.log(logging.DEBUG, "Question initialised: ID = " + str(ID))
@@ -15,7 +16,7 @@ class Question:
             Answer.Answer(
                 viewable_text=ans['viewable_text'],
                 validator=ans.get('validator'),
-                value=ans['value'] if ans.get('value') else i
+                value=ans.get('value')
             ) if isinstance(ans, dict)
             else Answer.Answer(
                 viewable_text=ans,
@@ -51,5 +52,7 @@ class Question:
             for ans in self.answers:
                 if ans.selected:
                     return ans
+
+            return None
         else:
             raise NotImplementedError("Non implemented question type")
