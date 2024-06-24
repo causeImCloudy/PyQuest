@@ -170,8 +170,6 @@ if __name__ == "__main__":
                         help="WIP!!! Force timed completion of the quest.")
     parser.add_argument("-p", "--scored", action="store_true",  # TODO
                         help="WIP!!! Scored completion of the quest.")
-    parser.add_argument("-s", "--start", action="store_true",
-                        help="Auto start quest.")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -183,4 +181,4 @@ if __name__ == "__main__":
 
     logging.log(level=logging.DEBUG, msg="Starting PyQuest with Debug Logging")
 
-    quest = PyQuest(config=args.config, first_question=args.questions, auto_start=args.start)
+    quest = PyQuest(config=args.config, first_question=args.questions, auto_start=True)
