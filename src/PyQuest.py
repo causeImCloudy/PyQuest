@@ -160,7 +160,7 @@ if __name__ == "__main__":
     # Set commandline options
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-q", "--questions", type=str,
+    parser.add_argument("-q", "--question", type=str,
                         help="Question to ask first")
     parser.add_argument("-D", "--debug", action="store_true",
                         help="Enable debug logging of the command line")
