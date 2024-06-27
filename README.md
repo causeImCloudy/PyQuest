@@ -4,6 +4,20 @@ PyQuest is a linked list based question and answer platform for your terminal. T
 where each answer correlates to specific paths Ever find yourself in need of a Q&A loop for your program? Here's the
 solution! Build out a JSON or YAML file with your questions and answers, choose a display and get back the answers.
 
+## Coming Features
+In no particular order here are some addtional features I plan to implement. If you have a feature please request it in the issues section.
+
+- Standard I/O based modules
+- New Question and Answer Types:
+  - Free Text
+  - Select all that apply
+  - Optional Questions
+- Second Screen for Cruses based modules to print info to
+- Encrypted answer templates
+- Scored quests
+- PyQuest Builder, to aid in mapping your quest
+  _I know the current config is messy to make manually, but I plan to make a builder to assist and visualize_  
+
 ## Installation
 
 It is highly recommended to install from Pip.
@@ -19,7 +33,6 @@ pip install pyquest
 ```bash
 git clone https://github.com/causeImCloudy/PyQuest.git
 cd PyQuest
-pip install -r requirements.txt
 python -m build
 pip install dist/PyQuest<>.whl
 ```
@@ -103,3 +116,5 @@ options:
   -t, --timed           WIP!!! Force timed completion of the quest.
   -p, --scored          WIP!!! Scored completion of the quest.
 ```
+
+
