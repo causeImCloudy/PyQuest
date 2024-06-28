@@ -25,7 +25,7 @@ It is highly recommended to install from Pip.
 ### From pip
 
 ```bash
-pip install pyquest
+pip install pyquest-dnd
 ```
 
 ### Build from source
