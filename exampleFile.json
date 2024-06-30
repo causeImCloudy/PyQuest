@@ -2,15 +2,13 @@
   "first_question" : "1",
   "timed" : false,
   "scored" : false,
+  "printer": "screen, [TODO]",
   "<ID>" : {
     "question" : {
       "viewable_text" : "What is your name?",
       "next_question" : "<NEXT_QUESTION_ID>", # Null is disabled and -1 lets you end the quest without submitting
       "previous_question" : "<PREV_QUESTION_ID>", # Null is disabled
-      "validator" : {
-        "type" : "REGEX/DIGIT/MATH",
-        "regex" : "/d"
-      }
+      "type": "multiple_choice"
     },
     "answers" : [
       {

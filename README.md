@@ -46,6 +46,13 @@ The base configuration is a JSON or YAML file.
   "first_question": "1",
   "timed": false,
   "scored": false,
+  "printer": "screen [TODO]",
+  #
+  This
+  determins
+  the
+  screen
+  type
   "<ID>": {
     "question": {
       "viewable_text": "What is your name?",
@@ -65,8 +72,8 @@ The base configuration is a JSON or YAML file.
       is
       only
       used
-      with
-      some
+      in
+      certain
       printer
       formats
       "type": "REGEX/DIGIT/MATH",
@@ -101,7 +108,7 @@ PyQuest can be used in the command line or from within your application.
 
 ### Command Line
 
-PyQuest can be used u
+PyQuest can be used in the command line as follows
 
 ```bash
 usage: PyQuest.py [-h] [-q QUESTIONS] [-D] -i CONFIG [-t] [-p]
