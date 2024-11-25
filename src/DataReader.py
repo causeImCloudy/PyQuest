@@ -33,7 +33,7 @@ def data_from_dict(data_dict: dict):
 
     try:
         logging.debug(msg=data_dict)
-        questions = {ID: Question.Question(ID, question) for ID, question in data_dict.items()}
+        questions = {ID: Question.Question(question) for ID, question in data_dict.items()}
 
         return questions
 

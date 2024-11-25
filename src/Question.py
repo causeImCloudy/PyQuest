@@ -4,29 +4,44 @@ import Answer
 
 
 class Question:
-    def __init__(self, ID, question):
-        logging.log(logging.DEBUG, "Question initialised: ID = " + str(ID))
+    def __init__(self, question):
 
-        q = question["question"]
-        a = question["answers"]
+        q = question.get("question")
+        a = question.get("answers")
 
-        self.question_text = q['viewable_text']
-        self.question_type = q['type']
-        self.answers = [
-            Answer.Answer(
-                viewable_text=ans['viewable_text'],
-                validator=ans.get('validator'),
-                value=ans.get('value')
-            ) if isinstance(ans, dict)
-            else Answer.Answer(
-                viewable_text=ans,
-                value=i
-            )
-            for i, ans in enumerate(a)
-        ]
+        self.answers = []
 
-        self.next_question = q['next_question']
-        self.previous_question = q['previous_question']
+        if q is not None:
+            self.question_text = q.get('viewable_text')
+            self.question_type = q.get('type')
+            self.next_question = q.get('next_question')
+            self.previous_question = q.get('previous_question')
+
+        if a is not None:
+            self.answers = [
+                Answer.Answer(
+                    viewable_text=ans['viewable_text'],
+                    next_question=ans.get('next_question'),
+                    validator=ans.get('validator'),
+                    value=ans.get('value')
+                )
+                for i, ans in enumerate(a)
+            ]
+
+    def reset(self) -> None:
+        """
+        Resets the answers attached to the question to initial state.
+        :return:
+        """
+
+        # Reset the answer holder for free form questions then return
+        if self.question_type == 'free_form':
+            self.answers[0].set_viewable_text("")
+            return
+
+        # Reset each answer in the question back to false.
+        for answer in self.answers:
+            answer.set_selected_status(False)
 
     def get_viewable_text(self) -> None:
         return self.question_text
@@ -51,8 +66,17 @@ class Question:
         if self.question_type == 'multiple_choice':
             for ans in self.answers:
                 if ans.selected:
+                    logging.debug(f"Answer Set to {ans}")
                     return ans
-
             return None
+        elif self.question_type == 'free_form':
+            logging.debug(f"Answer Set to {self.answers[0]}")
+            return self.answers[0]
         else:
-            raise NotImplementedError("Non implemented question type")
+            raise NotImplementedError(f"Non implemented question type {self.question_type}")
+
+    def get_question_type(self):
+        return self.question_type
+
+    def add_answer(self, answer: Answer) -> None:
+        self.answers.append(answer)
