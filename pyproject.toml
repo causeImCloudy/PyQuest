@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyQuest-dnd"
-version = "0.1.1"
+version = "0.1.2"
 description = "A question and answer plaform that supports multiple(WIP!) terminal Q&A interactions and navigation. "
 readme = "README.md"
 requires-python = ">=3.12"

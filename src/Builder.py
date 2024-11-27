@@ -262,8 +262,11 @@ def build() -> None:
 
     # Initialize the 3 PyQuest variables with the above config
     # Create an output PyQuest instance to then save to file later.
+    # Created here to utilize the .reset() function otherwise passed config data is deleted during initialization
     settings = PyQuest.PyQuest(settings_config)
     question_quest = PyQuest.PyQuest(question_loop_config)
+    answer_freeform_quest = PyQuest.PyQuest(answer_loop_free_form_config)
+    answer_multiple_choice_quest = PyQuest.PyQuest(answer_loop_config)
     output = PyQuest.PyQuest(None)
 
     # Run through the opening to determine the settings for the quest
@@ -308,20 +311,19 @@ def build() -> None:
         })
 
         if question_type == "multiple_choice":
-            answer_quest = PyQuest.PyQuest(answer_loop_config)
             while True:
                 # Start Answer PyQuestion
-                answer_quest.start()
+                answer_multiple_choice_quest.start()
 
                 # Break if you don't want to add any answers
-                continue_answer = answer_quest.get_question_by_id(0).get_selected_answer().get_value()
+                continue_answer = answer_multiple_choice_quest.get_question_by_id(0).get_selected_answer().get_value()
                 if not continue_answer:
                     break
 
                 # Create an answer with the respective associated answer, assign to question, then reset question
-                ans_viewable_text = answer_quest.get_question_by_id(1).get_selected_answer().get_value()
-                value = answer_quest.get_question_by_id(2).get_selected_answer().get_value()
-                next_question = answer_quest.get_question_by_id(3).get_selected_answer().get_value()
+                ans_viewable_text = answer_multiple_choice_quest.get_question_by_id(1).get_selected_answer().get_value()
+                value = answer_multiple_choice_quest.get_question_by_id(2).get_selected_answer().get_value()
+                next_question = answer_multiple_choice_quest.get_question_by_id(3).get_selected_answer().get_value()
 
                 answer = Answer.Answer(
                     viewable_text=ans_viewable_text,
@@ -329,15 +331,15 @@ def build() -> None:
                     next_question=int(next_question) if len(next_question) > 0 else None,
                 )
                 question.add_answer(answer)
-                answer_quest.reset()
+                answer_multiple_choice_quest.reset()
 
         elif question_type == "free_form":
             # Run through the free form question then creat the answer, and add it to question
-            answer_quest = PyQuest.PyQuest(answer_loop_free_form_config)
-            answer_quest.start()
+            answer_freeform_quest = PyQuest.PyQuest(answer_loop_free_form_config)
+            answer_freeform_quest.start()
 
-            ans_viewable_text = answer_quest.get_question_by_id(0).get_selected_answer().get_value()
-            next_question = answer_quest.get_question_by_id(1).get_selected_answer().get_value()
+            ans_viewable_text = answer_freeform_quest.get_question_by_id(0).get_selected_answer().get_value()
+            next_question = answer_freeform_quest.get_question_by_id(1).get_selected_answer().get_value()
 
             answer = Answer.Answer(
                 viewable_text=ans_viewable_text,
@@ -345,6 +347,8 @@ def build() -> None:
                 next_question=int(next_question) if next_question is not None and len(next_question) > 0 else None
             )
             question.add_answer(answer)
+
+            answer_freeform_quest.reset()
 
         output.add_question(question, index)
         question_quest.reset()

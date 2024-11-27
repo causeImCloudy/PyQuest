@@ -5,7 +5,7 @@ import Answer
 import DataPrinter
 import DataReader
 import Question
-from src.DataPrinter import ScreenPrinter
+from DataPrinter import ScreenPrinter
 
 DEFAULT_AES = "ThisShouldBeChangedForYouIfYouWantToChangeIt"
 DEFAULT_IV = "THISISANIV"
@@ -13,7 +13,12 @@ DEFAULT_IV = "THISISANIV"
 
 class PyQuest:
     def __init__(self, config, first_question=None, auto_start=False) -> None:
+        """
 
+        :param config:  This is a reference - make a copy if you intend to edit the passed config variable otherwise info will be deleted
+        :param first_question:
+        :param auto_start:
+        """
         # Initialize variables for use later, and assign passed variables.
         # Some variables depend on being internalised to default None
         self.timed, self.scored, self.printer = None, None, None
@@ -45,6 +50,7 @@ class PyQuest:
         self.set_printer(data["printer"])
         self.title = data.get("title", None)
 
+        # !!! This variable is referenced not a copy. !!!
         # Delete excess variables from the config dict
         # This is needed in order to loop and initialize each question correctly
         del data["first_question"]
